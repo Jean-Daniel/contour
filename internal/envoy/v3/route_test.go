@@ -20,6 +20,9 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	envoy_internal_redirect_allow_list_route_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/allow_listed_routes/v3"
+	envoy_internal_redirect_previous_routes_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/previous_routes/v3"
+	envoy_internal_redirect_safe_cross_scheme_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/safe_cross_scheme/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -665,6 +668,82 @@ func TestRouteRoute(t *testing.T) {
 							Regex: "^/prefix/*",
 						},
 						Substitution: "/",
+					},
+				},
+			},
+		},
+		"internal redirect": {
+			route: &dag.Route{
+				InternalRedirectPolicy: &dag.InternalRedirectPolicy{
+					MaxInternalRedirects:  5,
+					RedirectResponseCodes: []uint32{307},
+					Predicates: []dag.InternalRedirectPredicate{
+						&dag.PreviousRoutesPredicate{},
+						&dag.SafeCrossSchemePredicate{},
+						&dag.AllowListedRoutesPredicate{
+							AllowedRouteNames: []string{
+								"something",
+							},
+						},
+					},
+					AllowCrossSchemeRedirect: true,
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					InternalRedirectPolicy: &envoy_route_v3.InternalRedirectPolicy{
+						MaxInternalRedirects:  wrapperspb.UInt32(5),
+						RedirectResponseCodes: []uint32{307},
+						Predicates: []*envoy_core_v3.TypedExtensionConfig{
+							{
+								Name:        "envoy.internal_redirect_predicates.previous_routes",
+								TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_previous_routes_v3.PreviousRoutesConfig{}),
+							},
+							{
+								Name:        "envoy.internal_redirect_predicates.safe_cross_scheme",
+								TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_safe_cross_scheme_v3.SafeCrossSchemeConfig{}),
+							},
+							{
+								Name: "envoy.internal_redirect_predicates.allow_listed_routes",
+								TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_allow_list_route_v3.AllowListedRoutesConfig{
+									AllowedRouteNames: []string{
+										"something",
+									},
+								}),
+							},
+						},
+						AllowCrossSchemeRedirect: true,
+					},
+				},
+			},
+		},
+		"internal redirect without max": {
+			route: &dag.Route{
+				InternalRedirectPolicy: &dag.InternalRedirectPolicy{
+					MaxInternalRedirects: 0,
+					Predicates: []dag.InternalRedirectPredicate{
+						&dag.PreviousRoutesPredicate{},
+					},
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					InternalRedirectPolicy: &envoy_route_v3.InternalRedirectPolicy{
+						MaxInternalRedirects: nil,
+						Predicates: []*envoy_core_v3.TypedExtensionConfig{
+							{
+								Name:        "envoy.internal_redirect_predicates.previous_routes",
+								TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_previous_routes_v3.PreviousRoutesConfig{}),
+							},
+						},
 					},
 				},
 			},

@@ -1381,6 +1381,161 @@ int64
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.HTTPInternalRedirectPolicy">HTTPInternalRedirectPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>maxInternalRedirects</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxInternalRedirects An internal redirect is not handled, unless the number
+of previous internal redirects that a downstream request has
+encountered is lower than this value.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>redirectResponseCodes</code>
+<br>
+<em>
+[]uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RedirectResponseCodes If unspecified, only 302 will be treated as internal redirect.
+Only 301, 302, 303, 307 and 308 are valid values.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>predicates</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPInternalRedirectPredicate">
+[]HTTPInternalRedirectPredicate
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Predicates list of predicates that are queried when an upstream response is deemed
+to trigger an internal redirect by all other criteria.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>allowCrossSchemeRedirect</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AllowCrossSchemeRedirect Allow internal redirect to follow a target URI with a
+different scheme than the value of x-forwarded-proto.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HTTPInternalRedirectPredicate">HTTPInternalRedirectPredicate
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPInternalRedirectPolicy">HTTPInternalRedirectPolicy</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPInternalRedirectPredicateName">
+HTTPInternalRedirectPredicateName
+</a>
+</em>
+</td>
+<td>
+<p>Name of the predicate to apply</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>allowedRouteNames</code>
+<br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AllowedRouteNames is the list of routes that’s allowed as redirect target
+by this predicate, identified by the route’s name.</p>
+<p>Note: AllowedRouteNames is ignored if Name is not AllowListedRoutes.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HTTPInternalRedirectPredicateName">HTTPInternalRedirectPredicateName
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPInternalRedirectPredicate">HTTPInternalRedirectPredicate</a>)
+</p>
+<p>
+<p>InternalRedirectPredicate define the predicate used to accept or reject
+an internal redirection.</p>
+<p>Supported predicates are AllowListedRoutes, PreviousRoutes and SafeCrossScheme.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;AllowListedRoutes&#34;</p></td>
+<td><p>An internal redirect predicate that accepts only explicitly allowed target routes.</p>
+</td>
+</tr><tr><td><p>&#34;PreviousRoutes&#34;</p></td>
+<td><p>An internal redirect predicate that rejects redirect targets that are pointing
+to a route that has been followed by a previous redirect from the current route.</p>
+</td>
+</tr><tr><td><p>&#34;SafeCrossScheme&#34;</p></td>
+<td><p>An internal redirect predicate that checks the scheme between
+the downstream url and the redirect target url .</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1.HTTPProxySpec">HTTPProxySpec
 </h3>
 <p>
@@ -3061,6 +3216,19 @@ Ignored if NumRetries is not supplied.</p>
 <tbody>
 <tr>
 <td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Name of the route.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>conditions</code>
 <br>
 <em>
@@ -3304,6 +3472,21 @@ HTTPDirectResponsePolicy
 <td>
 <em>(Optional)</em>
 <p>DirectResponsePolicy returns an arbitrary HTTP response directly.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>internalRedirectPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPInternalRedirectPolicy">
+HTTPInternalRedirectPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The policy to define when to handle redirects responses internally.</p>
 </td>
 </tr>
 <tr>

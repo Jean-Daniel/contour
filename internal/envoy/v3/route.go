@@ -27,6 +27,9 @@ import (
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
+	envoy_internal_redirect_allow_list_route_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/allow_listed_routes/v3"
+	envoy_internal_redirect_previous_routes_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/previous_routes/v3"
+	envoy_internal_redirect_safe_cross_scheme_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/safe_cross_scheme/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -291,6 +294,7 @@ func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 		IdleTimeout:           envoy.Timeout(r.TimeoutPolicy.IdleStreamTimeout),
 		HashPolicy:            hashPolicy(r.RequestHashPolicies),
 		RequestMirrorPolicies: mirrorPolicy(r),
+		InternalRedirectPolicy: internalRedirectPolicy(r.InternalRedirectPolicy),
 	}
 
 	if r.PathRewritePolicy != nil {
@@ -418,6 +422,42 @@ func retryPolicy(r *dag.Route) *envoy_route_v3.RetryPolicy {
 	rp.PerTryTimeout = envoy.Timeout(r.RetryPolicy.PerTryTimeout)
 
 	return rp
+}
+
+func internalRedirectPolicy(p *dag.InternalRedirectPolicy) *envoy_route_v3.InternalRedirectPolicy {
+	if p == nil {
+		return nil
+	}
+
+	var predicates []*envoy_core_v3.TypedExtensionConfig
+	for _, p := range p.Predicates {
+		switch p := p.(type) {
+		case *dag.AllowListedRoutesPredicate:
+			predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
+				Name: "envoy.internal_redirect_predicates.allow_listed_routes",
+				TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_allow_list_route_v3.AllowListedRoutesConfig{
+					AllowedRouteNames: p.AllowedRouteNames,
+				}),
+			})
+		case *dag.PreviousRoutesPredicate:
+			predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
+				Name:        "envoy.internal_redirect_predicates.previous_routes",
+				TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_previous_routes_v3.PreviousRoutesConfig{}),
+			})
+		case *dag.SafeCrossSchemePredicate:
+			predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
+				Name:        "envoy.internal_redirect_predicates.safe_cross_scheme",
+				TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_safe_cross_scheme_v3.SafeCrossSchemeConfig{}),
+			})
+		}
+	}
+
+	return &envoy_route_v3.InternalRedirectPolicy{
+		MaxInternalRedirects:     protobuf.UInt32OrNil(p.MaxInternalRedirects),
+		RedirectResponseCodes:    p.RedirectResponseCodes,
+		Predicates:               predicates,
+		AllowCrossSchemeRedirect: p.AllowCrossSchemeRedirect,
+	}
 }
 
 // UpgradeHTTPS returns a route Action that redirects the request to HTTPS.

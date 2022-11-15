@@ -745,22 +745,25 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
+		internalRedirectPolicy := internalRedirectPolicy(route.InternalRedirectPolicy, validCond)
+
 		directPolicy := directResponsePolicy(route.DirectResponsePolicy)
 
 		r := &Route{
-			PathMatchCondition:    mergePathMatchConditions(routeConditions),
-			HeaderMatchConditions: mergeHeaderMatchConditions(routeConditions),
-			Websocket:             route.EnableWebsockets,
-			HTTPSUpgrade:          routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
-			TimeoutPolicy:         rtp,
-			RetryPolicy:           retryPolicy(route.RetryPolicy),
-			RequestHeadersPolicy:  reqHP,
-			ResponseHeadersPolicy: respHP,
-			CookieRewritePolicies: cookieRP,
-			RateLimitPolicy:       rlp,
-			RequestHashPolicies:   requestHashPolicies,
-			Redirect:              redirectPolicy,
-			DirectResponse:        directPolicy,
+			PathMatchCondition:     mergePathMatchConditions(routeConditions),
+			HeaderMatchConditions:  mergeHeaderMatchConditions(routeConditions),
+			Websocket:              route.EnableWebsockets,
+			HTTPSUpgrade:           routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
+			TimeoutPolicy:          rtp,
+			RetryPolicy:            retryPolicy(route.RetryPolicy),
+			RequestHeadersPolicy:   reqHP,
+			ResponseHeadersPolicy:  respHP,
+			CookieRewritePolicies:  cookieRP,
+			RateLimitPolicy:        rlp,
+			RequestHashPolicies:    requestHashPolicies,
+			Redirect:               redirectPolicy,
+			DirectResponse:         directPolicy,
+			InternalRedirectPolicy: internalRedirectPolicy,
 		}
 
 		// If the enclosing root proxy enabled authorization,
@@ -1534,6 +1537,39 @@ func directResponsePolicy(direct *contour_api_v1.HTTPDirectResponsePolicy) *Dire
 	}
 
 	return directResponse(uint32(direct.StatusCode), direct.Body)
+}
+
+func internalRedirectPolicy(internal *contour_api_v1.HTTPInternalRedirectPolicy, validCond *contour_api_v1.DetailedCondition) *InternalRedirectPolicy {
+	if internal == nil {
+		return nil
+	}
+
+	var predicates []InternalRedirectPredicate
+	for _, p := range internal.Predicates {
+		if len(p.AllowedRouteNames) > 0 && p.Name != contour_api_v1.AllowListedRoutes {
+			validCond.AddWarningf(contour_api_v1.ConditionTypeRouteError, "IgnoredField",
+				"ignoring field %q; %s is not supported on %s predicate",
+				"Spec.Routes.InternalRedirectPolicy.Predicate.AllowedRouteNames", "AllowedRouteNames", p.Name)
+		}
+
+		switch p.Name {
+		case contour_api_v1.AllowListedRoutes:
+			predicates = append(predicates, &AllowListedRoutesPredicate{
+				AllowedRouteNames: p.AllowedRouteNames,
+			})
+		case contour_api_v1.PreviousRoutes:
+			predicates = append(predicates, &PreviousRoutesPredicate{})
+		case contour_api_v1.SafeCrossScheme:
+			predicates = append(predicates, &SafeCrossSchemePredicate{})
+		}
+	}
+
+	return &InternalRedirectPolicy{
+		MaxInternalRedirects:     internal.MaxInternalRedirects,
+		RedirectResponseCodes:    internal.RedirectResponseCodes,
+		Predicates:               predicates,
+		AllowCrossSchemeRedirect: internal.AllowCrossSchemeRedirect,
+	}
 }
 
 func slowStartConfig(slowStart *contour_api_v1.SlowStartPolicy) (*SlowStartConfig, error) {

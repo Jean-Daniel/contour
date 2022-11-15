@@ -410,6 +410,9 @@ type CORSPolicy struct {
 
 // Route contains the set of routes for a virtual host.
 type Route struct {
+	// Name of the route.
+	// +optional
+	Name string `json:"name,omitempty"`
 	// Conditions are a set of rules that are applied to a Route.
 	// When applied, they are merged using AND, with one exception:
 	// There can be only one Prefix MatchCondition per Conditions slice.
@@ -472,6 +475,10 @@ type Route struct {
 	// DirectResponsePolicy returns an arbitrary HTTP response directly.
 	// +optional
 	DirectResponsePolicy *HTTPDirectResponsePolicy `json:"directResponsePolicy,omitempty"`
+
+	// The policy to define when to handle redirects responses internally.
+	// +optional
+	InternalRedirectPolicy *HTTPInternalRedirectPolicy `json:"internalRedirectPolicy,omitempty"`
 
 	// The policy for verifying JWTs for requests to this route.
 	// +optional
@@ -563,6 +570,65 @@ type HTTPRequestRedirectPolicy struct {
 	// +optional
 	// +kubebuilder:validation:Pattern=`^\/.*$`
 	Prefix *string `json:"prefix,omitempty"`
+}
+
+// InternalRedirectPredicate define the predicate used to accept or reject
+// an internal redirection.
+//
+// Supported predicates are AllowListedRoutes, PreviousRoutes and SafeCrossScheme.
+//
+// +kubebuilder:validation:Enum=AllowListedRoutes;PreviousRoutes;SafeCrossScheme
+type HTTPInternalRedirectPredicateName string
+
+const (
+	// An internal redirect predicate that accepts only explicitly allowed target routes.
+	AllowListedRoutes HTTPInternalRedirectPredicateName = "AllowListedRoutes"
+
+	// An internal redirect predicate that rejects redirect targets that are pointing
+	// to a route that has been followed by a previous redirect from the current route.
+	PreviousRoutes HTTPInternalRedirectPredicateName = "PreviousRoutes"
+
+	// An internal redirect predicate that checks the scheme between
+	// the downstream url and the redirect target url .
+	SafeCrossScheme HTTPInternalRedirectPredicateName = "SafeCrossScheme"
+)
+
+type HTTPInternalRedirectPredicate struct {
+	// Name of the predicate to apply
+	Name HTTPInternalRedirectPredicateName `json:"name"`
+
+	// AllowedRouteNames is the list of routes that’s allowed as redirect target
+	// by this predicate, identified by the route’s name.
+	//
+	// Note: AllowedRouteNames is ignored if Name is not AllowListedRoutes.
+	//
+	// +optional
+	AllowedRouteNames []string `json:"allowedRouteNames,omitempty"`
+}
+
+type HTTPInternalRedirectPolicy struct {
+	// MaxInternalRedirects An internal redirect is not handled, unless the number
+	// of previous internal redirects that a downstream request has
+	// encountered is lower than this value.
+	// +kubebuilder:default=0
+	// +optional
+	MaxInternalRedirects uint32 `json:"maxInternalRedirects,omitempty"`
+
+	// RedirectResponseCodes If unspecified, only 302 will be treated as internal redirect.
+	// Only 301, 302, 303, 307 and 308 are valid values.
+	// +optional
+	RedirectResponseCodes []uint32 `json:"redirectResponseCodes,omitempty"`
+
+	// Predicates list of predicates that are queried when an upstream response is deemed
+	// to trigger an internal redirect by all other criteria.
+	// +optional
+	Predicates []HTTPInternalRedirectPredicate `json:"predicates"`
+
+	// AllowCrossSchemeRedirect Allow internal redirect to follow a target URI with a
+	// different scheme than the value of x-forwarded-proto.
+	// +kubebuilder:default=false
+	// +optional
+	AllowCrossSchemeRedirect bool `json:"allowCrossSchemeRedirect,omitempty"`
 }
 
 type CookieRewritePolicy struct {

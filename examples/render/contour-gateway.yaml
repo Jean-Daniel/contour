@@ -4668,6 +4668,58 @@ spec:
                       required:
                       - path
                       type: object
+                    internalRedirectPolicy:
+                      description: The policy to define when to handle redirects responses
+                        internally.
+                      properties:
+                        allowCrossSchemeRedirect:
+                          default: false
+                          description: AllowCrossSchemeRedirect Allow internal redirect
+                            to follow a target URI with a different scheme than the
+                            value of x-forwarded-proto.
+                          type: boolean
+                        maxInternalRedirects:
+                          default: 0
+                          description: MaxInternalRedirects An internal redirect is
+                            not handled, unless the number of previous internal redirects
+                            that a downstream request has encountered is lower than
+                            this value.
+                          format: int32
+                          type: integer
+                        predicates:
+                          description: Predicates list of predicates that are queried
+                            when an upstream response is deemed to trigger an internal
+                            redirect by all other criteria.
+                          items:
+                            properties:
+                              allowedRouteNames:
+                                description: "AllowedRouteNames is the list of routes
+                                  that’s allowed as redirect target by this predicate,
+                                  identified by the route’s name. \n Note: AllowedRouteNames
+                                  is ignored if Name is not AllowListedRoutes."
+                                items:
+                                  type: string
+                                type: array
+                              name:
+                                description: Name of the predicate to apply
+                                enum:
+                                - AllowListedRoutes
+                                - PreviousRoutes
+                                - SafeCrossScheme
+                                type: string
+                            required:
+                            - name
+                            type: object
+                          type: array
+                        redirectResponseCodes:
+                          description: RedirectResponseCodes If unspecified, only
+                            302 will be treated as internal redirect. Only 301, 302,
+                            303, 307 and 308 are valid values.
+                          items:
+                            format: int32
+                            type: integer
+                          type: array
+                      type: object
                     jwtVerificationPolicy:
                       description: The policy for verifying JWTs for requests to this
                         route.
@@ -4757,6 +4809,9 @@ spec:
                             policy is used.
                           type: string
                       type: object
+                    name:
+                      description: Name of the route.
+                      type: string
                     pathRewritePolicy:
                       description: The policy for rewriting the path of the request
                         URL after the request has been routed to a Service.

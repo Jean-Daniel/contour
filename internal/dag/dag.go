@@ -213,6 +213,52 @@ type Redirect struct {
 	Prefix string
 }
 
+type InternalRedirectPredicate interface {
+	Is_InternalRedirectPredicate()
+}
+
+// AllowListedRoutesPredicate accepts only explicitly allowed
+// target routes.
+type AllowListedRoutesPredicate struct {
+	AllowedRouteNames []string
+}
+
+// PreviousRoutesPredicate rejects redirect targets that are
+// pointing to a route that has been followed by a previous redirect
+type PreviousRoutesPredicate struct {
+}
+
+// SafeCrossSchemePredicate checks the scheme between the downstream
+// url and the redirect target url
+type SafeCrossSchemePredicate struct {
+}
+
+func (*AllowListedRoutesPredicate) Is_InternalRedirectPredicate() {}
+func (*PreviousRoutesPredicate) Is_InternalRedirectPredicate()    {}
+func (*SafeCrossSchemePredicate) Is_InternalRedirectPredicate()   {}
+
+// InternalRedirectPolicy defines if envoy should handle redirect
+// response internally instead of sending it downstream.
+// https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-internalredirectpolicy
+type InternalRedirectPolicy struct {
+	// MaxInternalRedirects An internal redirect is not handled, unless the number
+	// of previous internal redirects that a downstream request has
+	// encountered is lower than this value
+	MaxInternalRedirects uint32
+
+	// RedirectResponseCodes If unspecified, only 302 will be treated as internal redirect.
+	// Only 301, 302, 303, 307 and 308 are valid values
+	RedirectResponseCodes []uint32
+
+	// Predicates list of predicates that are queried when an upstream response is deemed
+	// to trigger an internal redirect by all other criteria
+	Predicates []InternalRedirectPredicate
+
+	// AllowCrossSchemeRedirect Allow internal redirect to follow a target URI with a
+	// different scheme than the value of x-forwarded-proto.
+	AllowCrossSchemeRedirect bool
+}
+
 // Route defines the properties of a route to a Cluster.
 type Route struct {
 
@@ -292,6 +338,10 @@ type Route struct {
 	// JWTProvider names a JWT provider defined on the virtual
 	// host to be used to validate JWTs on requests to this route.
 	JWTProvider string
+
+	// InternalRedirectPolicy defines if envoy should handle redirect
+	// response internally instead of sending it downstream.
+	InternalRedirectPolicy *InternalRedirectPolicy
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.

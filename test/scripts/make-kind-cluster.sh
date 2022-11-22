@@ -77,12 +77,12 @@ ${KUBECTL} wait --timeout="${WAITTIME}" -n metallb-system deployment/controller 
 
 # Apply config with addresses based on docker network IPAM
 if [[ "${IPV6_CLUSTER}" == "true" ]]; then
-    subnet=$(docker network inspect kind | jq -r '.[].IPAM.Config[].Subnet | select(contains(":"))')
+    subnet=$(docker network inspect kind | jq -r '.[].subnets[].subnet | select(contains(":"))')
     # Assume default kind network subnet prefix of 64, and choose addresses in that range.
     address_first_blocks=$(echo ${subnet} | awk -F: '{printf "%s:%s:%s:%s",$1,$2,$3,$4}')
     address_range="${address_first_blocks}:ffff:ffff:ffff::-${address_first_blocks}:ffff:ffff:ffff:003f"
 else
-    subnet=$(docker network inspect kind | jq -r '.[].IPAM.Config[].Subnet | select(contains(":") | not)')
+    subnet=$(docker network inspect kind | jq -r '.[].subnets[].subnet | select(contains(":") | not)')
     # Assume default kind network subnet prefix of 16, and choose addresses in that range.
     address_first_octets=$(echo ${subnet} | awk -F. '{printf "%s.%s",$1,$2}')
     address_range="${address_first_octets}.255.200-${address_first_octets}.255.250"

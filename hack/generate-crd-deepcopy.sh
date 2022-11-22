@@ -34,7 +34,7 @@ limitations under the License.
 EOF
 }
 
-readonly HEADER=$(mktemp)
+readonly HEADER=/tmp/toto
 
 boilerplate > "${HEADER}"
 

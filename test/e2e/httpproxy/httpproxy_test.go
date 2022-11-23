@@ -109,6 +109,16 @@ var _ = Describe("HTTPProxy", func() {
 	f.NamespacedTest("httpproxy-request-redirect-policy-nosvc", testRequestRedirectRuleNoService)
 	f.NamespacedTest("httpproxy-request-redirect-policy-invalid", testRequestRedirectRuleInvalid)
 
+	f.NamespacedTest("httpproxy-internal-redirect-policy", func(namespace string) {
+		Context("with ExternalName Services enabled", func() {
+			BeforeEach(func() {
+				contourConfig.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = pointer.Bool(true)
+			})
+			testInternalRedirectPolicy(namespace)
+		})
+	})
+
 	f.NamespacedTest("httpproxy-header-condition-match", testHeaderConditionMatch)
 
 	f.NamespacedTest("httpproxy-path-condition-match", testPathConditionMatch)

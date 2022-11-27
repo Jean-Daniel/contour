@@ -572,36 +572,17 @@ type HTTPRequestRedirectPolicy struct {
 	Prefix *string `json:"prefix,omitempty"`
 }
 
-// InternalRedirectPredicate define the predicate used to accept or reject
-// an internal redirection.
-//
-// Supported predicates are AllowListedRoutes, PreviousRoutes and SafeCrossScheme.
-//
-// +kubebuilder:validation:Enum=AllowListedRoutes;PreviousRoutes;SafeCrossScheme
-type HTTPInternalRedirectPredicateName string
-
-const (
-	// An internal redirect predicate that accepts only explicitly allowed target routes.
-	AllowListedRoutes HTTPInternalRedirectPredicateName = "AllowListedRoutes"
-
-	// An internal redirect predicate that rejects redirect targets that are pointing
-	// to a route that has been followed by a previous redirect from the current route.
-	PreviousRoutes HTTPInternalRedirectPredicateName = "PreviousRoutes"
-
-	// An internal redirect predicate that checks the scheme between
-	// the downstream url and the redirect target url .
-	SafeCrossScheme HTTPInternalRedirectPredicateName = "SafeCrossScheme"
-)
-
 type HTTPInternalRedirectPredicate struct {
-	// Name of the predicate to apply
-	Name HTTPInternalRedirectPredicateName `json:"name"`
+	// An internal redirect predicate that checks the scheme between the downstream url and the redirect target url.
+	// +optional
+	SafeCrossScheme bool `json:"safeCrossScheme,omitempty"`
+
+	// An internal redirect predicate that rejects redirect targets that are pointing to a route that has been followed by a previous redirect from the current route.
+	// +optional
+	PreviousRoutes bool `json:"previousRoutes,omitempty"`
 
 	// AllowedRouteNames is the list of routes that’s allowed as redirect target
 	// by this predicate, identified by the route’s name.
-	//
-	// Note: AllowedRouteNames is ignored if Name is not AllowListedRoutes.
-	//
 	// +optional
 	AllowedRouteNames []string `json:"allowedRouteNames,omitempty"`
 }
@@ -610,7 +591,6 @@ type HTTPInternalRedirectPolicy struct {
 	// MaxInternalRedirects An internal redirect is not handled, unless the number
 	// of previous internal redirects that a downstream request has
 	// encountered is lower than this value.
-	// +kubebuilder:default=0
 	// +optional
 	MaxInternalRedirects uint32 `json:"maxInternalRedirects,omitempty"`
 
@@ -622,11 +602,10 @@ type HTTPInternalRedirectPolicy struct {
 	// Predicates list of predicates that are queried when an upstream response is deemed
 	// to trigger an internal redirect by all other criteria.
 	// +optional
-	Predicates []HTTPInternalRedirectPredicate `json:"predicates"`
+	Predicates HTTPInternalRedirectPredicate `json:"predicates,omitempty"`
 
 	// AllowCrossSchemeRedirect Allow internal redirect to follow a target URI with a
 	// different scheme than the value of x-forwarded-proto.
-	// +kubebuilder:default=false
 	// +optional
 	AllowCrossSchemeRedirect bool `json:"allowCrossSchemeRedirect,omitempty"`
 }

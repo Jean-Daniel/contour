@@ -213,29 +213,19 @@ type Redirect struct {
 	Prefix string
 }
 
-type InternalRedirectPredicate interface {
-	Is_InternalRedirectPredicate()
-}
+type InternalRedirectPredicate struct {
 
-// AllowListedRoutesPredicate accepts only explicitly allowed
-// target routes.
-type AllowListedRoutesPredicate struct {
+	// SafeCrossScheme checks the scheme between the downstream
+	// url and the redirect target url
+	SafeCrossScheme bool
+
+	// PreviousRoutes rejects redirect targets that are pointing to
+	// a route that has been followed by a previous redirect
+	PreviousRoutes bool
+
+	// AllowRoutesNames accepts only explicitly allowed target routes.
 	AllowedRouteNames []string
 }
-
-// PreviousRoutesPredicate rejects redirect targets that are
-// pointing to a route that has been followed by a previous redirect
-type PreviousRoutesPredicate struct {
-}
-
-// SafeCrossSchemePredicate checks the scheme between the downstream
-// url and the redirect target url
-type SafeCrossSchemePredicate struct {
-}
-
-func (*AllowListedRoutesPredicate) Is_InternalRedirectPredicate() {}
-func (*PreviousRoutesPredicate) Is_InternalRedirectPredicate()    {}
-func (*SafeCrossSchemePredicate) Is_InternalRedirectPredicate()   {}
 
 // InternalRedirectPolicy defines if envoy should handle redirect
 // response internally instead of sending it downstream.
@@ -252,7 +242,7 @@ type InternalRedirectPolicy struct {
 
 	// Predicates list of predicates that are queried when an upstream response is deemed
 	// to trigger an internal redirect by all other criteria
-	Predicates []InternalRedirectPredicate
+	Predicates InternalRedirectPredicate
 
 	// AllowCrossSchemeRedirect Allow internal redirect to follow a target URI with a
 	// different scheme than the value of x-forwarded-proto.

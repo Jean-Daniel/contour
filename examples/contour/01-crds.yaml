@@ -4454,13 +4454,11 @@ spec:
                         internally.
                       properties:
                         allowCrossSchemeRedirect:
-                          default: false
                           description: AllowCrossSchemeRedirect Allow internal redirect
                             to follow a target URI with a different scheme than the
                             value of x-forwarded-proto.
                           type: boolean
                         maxInternalRedirects:
-                          default: 0
                           description: MaxInternalRedirects An internal redirect is
                             not handled, unless the number of previous internal redirects
                             that a downstream request has encountered is lower than
@@ -4471,27 +4469,26 @@ spec:
                           description: Predicates list of predicates that are queried
                             when an upstream response is deemed to trigger an internal
                             redirect by all other criteria.
-                          items:
-                            properties:
-                              allowedRouteNames:
-                                description: "AllowedRouteNames is the list of routes
-                                  that’s allowed as redirect target by this predicate,
-                                  identified by the route’s name. \n Note: AllowedRouteNames
-                                  is ignored if Name is not AllowListedRoutes."
-                                items:
-                                  type: string
-                                type: array
-                              name:
-                                description: Name of the predicate to apply
-                                enum:
-                                - AllowListedRoutes
-                                - PreviousRoutes
-                                - SafeCrossScheme
+                          properties:
+                            allowedRouteNames:
+                              description: AllowedRouteNames is the list of routes
+                                that’s allowed as redirect target by this predicate,
+                                identified by the route’s name.
+                              items:
                                 type: string
-                            required:
-                            - name
-                            type: object
-                          type: array
+                              type: array
+                            previousRoutes:
+                              description: An internal redirect predicate that rejects
+                                redirect targets that are pointing to a route that
+                                has been followed by a previous redirect from the
+                                current route.
+                              type: boolean
+                            safeCrossScheme:
+                              description: An internal redirect predicate that checks
+                                the scheme between the downstream url and the redirect
+                                target url.
+                              type: boolean
+                          type: object
                         redirectResponseCodes:
                           description: RedirectResponseCodes If unspecified, only
                             302 will be treated as internal redirect. Only 301, 302,

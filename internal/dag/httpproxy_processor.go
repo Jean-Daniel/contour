@@ -1544,30 +1544,14 @@ func internalRedirectPolicy(internal *contour_api_v1.HTTPInternalRedirectPolicy,
 		return nil
 	}
 
-	var predicates []InternalRedirectPredicate
-	for _, p := range internal.Predicates {
-		if len(p.AllowedRouteNames) > 0 && p.Name != contour_api_v1.AllowListedRoutes {
-			validCond.AddWarningf(contour_api_v1.ConditionTypeRouteError, "IgnoredField",
-				"ignoring field %q; %s is not supported on %s predicate",
-				"Spec.Routes.InternalRedirectPolicy.Predicate.AllowedRouteNames", "AllowedRouteNames", p.Name)
-		}
-
-		switch p.Name {
-		case contour_api_v1.AllowListedRoutes:
-			predicates = append(predicates, &AllowListedRoutesPredicate{
-				AllowedRouteNames: p.AllowedRouteNames,
-			})
-		case contour_api_v1.PreviousRoutes:
-			predicates = append(predicates, &PreviousRoutesPredicate{})
-		case contour_api_v1.SafeCrossScheme:
-			predicates = append(predicates, &SafeCrossSchemePredicate{})
-		}
-	}
-
 	return &InternalRedirectPolicy{
-		MaxInternalRedirects:     internal.MaxInternalRedirects,
-		RedirectResponseCodes:    internal.RedirectResponseCodes,
-		Predicates:               predicates,
+		MaxInternalRedirects:  internal.MaxInternalRedirects,
+		RedirectResponseCodes: internal.RedirectResponseCodes,
+		Predicates: InternalRedirectPredicate{
+			SafeCrossScheme:   internal.Predicates.SafeCrossScheme,
+			PreviousRoutes:    internal.Predicates.PreviousRoutes,
+			AllowedRouteNames: internal.Predicates.AllowedRouteNames,
+		},
 		AllowCrossSchemeRedirect: internal.AllowCrossSchemeRedirect,
 	}
 }

@@ -430,26 +430,27 @@ func internalRedirectPolicy(p *dag.InternalRedirectPolicy) *envoy_route_v3.Inter
 	}
 
 	var predicates []*envoy_core_v3.TypedExtensionConfig
-	for _, p := range p.Predicates {
-		switch p := p.(type) {
-		case *dag.AllowListedRoutesPredicate:
-			predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
-				Name: "envoy.internal_redirect_predicates.allow_listed_routes",
-				TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_allow_list_route_v3.AllowListedRoutesConfig{
-					AllowedRouteNames: p.AllowedRouteNames,
-				}),
-			})
-		case *dag.PreviousRoutesPredicate:
-			predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
-				Name:        "envoy.internal_redirect_predicates.previous_routes",
-				TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_previous_routes_v3.PreviousRoutesConfig{}),
-			})
-		case *dag.SafeCrossSchemePredicate:
-			predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
-				Name:        "envoy.internal_redirect_predicates.safe_cross_scheme",
-				TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_safe_cross_scheme_v3.SafeCrossSchemeConfig{}),
-			})
-		}
+	if p.Predicates.PreviousRoutes {
+		predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
+			Name:        "envoy.internal_redirect_predicates.previous_routes",
+			TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_previous_routes_v3.PreviousRoutesConfig{}),
+		})
+	}
+
+	if p.Predicates.SafeCrossScheme {
+		predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
+			Name:        "envoy.internal_redirect_predicates.safe_cross_scheme",
+			TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_safe_cross_scheme_v3.SafeCrossSchemeConfig{}),
+		})
+	}
+
+	if len(p.Predicates.AllowedRouteNames) > 0 {
+		predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
+			Name: "envoy.internal_redirect_predicates.allow_listed_routes",
+			TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_allow_list_route_v3.AllowListedRoutesConfig{
+				AllowedRouteNames: p.Predicates.AllowedRouteNames,
+			}),
+		})
 	}
 
 	return &envoy_route_v3.InternalRedirectPolicy{

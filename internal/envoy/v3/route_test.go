@@ -677,13 +677,11 @@ func TestRouteRoute(t *testing.T) {
 				InternalRedirectPolicy: &dag.InternalRedirectPolicy{
 					MaxInternalRedirects:  5,
 					RedirectResponseCodes: []uint32{307},
-					Predicates: []dag.InternalRedirectPredicate{
-						&dag.PreviousRoutesPredicate{},
-						&dag.SafeCrossSchemePredicate{},
-						&dag.AllowListedRoutesPredicate{
-							AllowedRouteNames: []string{
-								"something",
-							},
+					Predicates: dag.InternalRedirectPredicate{
+						SafeCrossScheme: true,
+						PreviousRoutes:  true,
+						AllowedRouteNames: []string{
+							"something",
 						},
 					},
 					AllowCrossSchemeRedirect: true,
@@ -725,8 +723,8 @@ func TestRouteRoute(t *testing.T) {
 			route: &dag.Route{
 				InternalRedirectPolicy: &dag.InternalRedirectPolicy{
 					MaxInternalRedirects: 0,
-					Predicates: []dag.InternalRedirectPredicate{
-						&dag.PreviousRoutesPredicate{},
+					Predicates: dag.InternalRedirectPredicate{
+						PreviousRoutes: true,
 					},
 				},
 				Clusters: []*dag.Cluster{c1},

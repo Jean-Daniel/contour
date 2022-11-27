@@ -1432,7 +1432,7 @@ Only 301, 302, 303, 307 and 308 are valid values.</p>
 <br>
 <em>
 <a href="#projectcontour.io/v1.HTTPInternalRedirectPredicate">
-[]HTTPInternalRedirectPredicate
+HTTPInternalRedirectPredicate
 </a>
 </em>
 </td>
@@ -1476,16 +1476,28 @@ different scheme than the value of x-forwarded-proto.</p>
 <tbody>
 <tr>
 <td style="white-space:nowrap">
-<code>name</code>
+<code>safeCrossScheme</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.HTTPInternalRedirectPredicateName">
-HTTPInternalRedirectPredicateName
-</a>
+bool
 </em>
 </td>
 <td>
-<p>Name of the predicate to apply</p>
+<em>(Optional)</em>
+<p>An internal redirect predicate that checks the scheme between the downstream url and the redirect target url.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>previousRoutes</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>An internal redirect predicate that rejects redirect targets that are pointing to a route that has been followed by a previous redirect from the current route.</p>
 </td>
 </tr>
 <tr>
@@ -1500,41 +1512,9 @@ HTTPInternalRedirectPredicateName
 <em>(Optional)</em>
 <p>AllowedRouteNames is the list of routes that’s allowed as redirect target
 by this predicate, identified by the route’s name.</p>
-<p>Note: AllowedRouteNames is ignored if Name is not AllowListedRoutes.</p>
 </td>
 </tr>
 </tbody>
-</table>
-<h3 id="projectcontour.io/v1.HTTPInternalRedirectPredicateName">HTTPInternalRedirectPredicateName
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1.HTTPInternalRedirectPredicate">HTTPInternalRedirectPredicate</a>)
-</p>
-<p>
-<p>InternalRedirectPredicate define the predicate used to accept or reject
-an internal redirection.</p>
-<p>Supported predicates are AllowListedRoutes, PreviousRoutes and SafeCrossScheme.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody><tr><td><p>&#34;AllowListedRoutes&#34;</p></td>
-<td><p>An internal redirect predicate that accepts only explicitly allowed target routes.</p>
-</td>
-</tr><tr><td><p>&#34;PreviousRoutes&#34;</p></td>
-<td><p>An internal redirect predicate that rejects redirect targets that are pointing
-to a route that has been followed by a previous redirect from the current route.</p>
-</td>
-</tr><tr><td><p>&#34;SafeCrossScheme&#34;</p></td>
-<td><p>An internal redirect predicate that checks the scheme between
-the downstream url and the redirect target url .</p>
-</td>
-</tr></tbody>
 </table>
 <h3 id="projectcontour.io/v1.HTTPProxySpec">HTTPProxySpec
 </h3>
